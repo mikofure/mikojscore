@@ -1,0 +1,101 @@
+name: CI/CD Build and Test
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-test-linux:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+        
+    - name: Create build directory
+      run: mkdir -p build
+      
+    - name: Configure CMake
+      run: |
+        cd build
+        cmake ..
+        
+    - name: Build project
+      run: |
+        cd build
+        cmake --build . --config Release
+        
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure
+        
+  build-test-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Create build directory
+      run: mkdir build
+      
+    - name: Configure CMake
+      run: |
+        cd build
+        cmake ..
+        
+    - name: Build project
+      run: |
+        cd build
+        cmake --build . --config Release
+        
+    - name: Run tests
+      run: |
+        cd build
+        ctest --output-on-failure -C Release
+        
+  # Optional: Create release artifacts
+  create-artifacts:
+    needs: [build-test-linux, build-test-windows]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+        
+    - name: Build release
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . --config Release
+        
+    - name: Package artifacts
+      run: |
+        mkdir -p artifacts
+        cp build/shell/mikojs artifacts/
+        cp include/mikojs.h artifacts/
+        cp lib/*.js artifacts/
+        
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: mikojs-release
+        path: artifacts/

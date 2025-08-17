@@ -1,0 +1,135 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+    steps:
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: MikoJS ${{ github.ref }}
+        draft: false
+        prerelease: false
+        body: |
+          ## Changes in this Release
+          
+          - See commit history for detailed changes
+          
+          ## Downloads
+          
+          - **Linux**: Download the `mikojs-linux` binary
+          - **Windows**: Download the `mikojs-windows.exe` binary
+          
+          ## Installation
+          
+          1. Download the appropriate binary for your platform
+          2. Make it executable (Linux/macOS): `chmod +x mikojs-linux`
+          3. Run: `./mikojs-linux` or `mikojs-windows.exe`
+
+  build-linux:
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential cmake
+        
+    - name: Build release
+      run: |
+        mkdir build
+        cd build
+        cmake -DCMAKE_BUILD_TYPE=Release ..
+        cmake --build . --config Release
+        
+    - name: Package Linux binary
+      run: |
+        mkdir -p release
+        cp build/shell/mikojs release/mikojs-linux
+        strip release/mikojs-linux
+        
+    - name: Upload Linux Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./release/mikojs-linux
+        asset_name: mikojs-linux
+        asset_content_type: application/octet-stream
+
+  build-windows:
+    needs: create-release
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Build release
+      run: |
+        mkdir build
+        cd build
+        cmake ..
+        cmake --build . --config Release
+        
+    - name: Package Windows binary
+      run: |
+        mkdir release
+        copy build\shell\Release\mikojs.exe release\mikojs-windows.exe
+        
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./release/mikojs-windows.exe
+        asset_name: mikojs-windows.exe
+        asset_content_type: application/octet-stream
+
+  build-source:
+    needs: create-release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Create source package
+      run: |
+        mkdir -p release
+        tar -czf release/mikojs-source.tar.gz \
+          --exclude='.git*' \
+          --exclude='build*' \
+          --exclude='.vs' \
+          --exclude='*.user' \
+          .
+        
+    - name: Upload Source Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ needs.create-release.outputs.upload_url }}
+        asset_path: ./release/mikojs-source.tar.gz
+        asset_name: mikojs-source.tar.gz
+        asset_content_type: application/gzip

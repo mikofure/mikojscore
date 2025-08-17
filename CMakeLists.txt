@@ -116,6 +116,30 @@ install(DIRECTORY include/
     FILES_MATCHING PATTERN "*.h"
 )
 
-# Enable testing
+# ============================================================================
+# Testing Configuration
+# ============================================================================
+
+# Enable CTest framework for running unit tests
+# This allows using 'ctest' command to run all tests or specific test suites
 enable_testing()
+
+# Add the tests subdirectory which contains:
+# - test_gc.c: Garbage collector functionality tests
+# - test_lexer.c: JavaScript tokenizer/lexer tests
+# - test_parser.c: JavaScript parser and AST generation tests
+# - test_runtime.c: Runtime value creation and manipulation tests
+# - test_vm.c: Virtual machine bytecode execution tests
+# - test_main.c: Main test runner that orchestrates all test suites
+#
+# The tests subdirectory has its own CMakeLists.txt that defines:
+# - Individual test executables for each component
+# - Test dependencies and linking with the main mikojs library
+# - CTest integration for automated testing
+# 
+# To run tests:
+# - Build: cmake --build . --target mikojs_tests
+# - Run all: ctest
+# - Run specific: ctest -R test_lexer
+# - Verbose output: ctest -V
 add_subdirectory(tests)

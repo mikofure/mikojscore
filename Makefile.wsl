@@ -6,8 +6,8 @@ PROJECT_NAME = MikoJSCore
 VERSION = 0.1.0
 
 # Compiler settings
-CC = gcc
-CXX = g++
+CC = wsl gcc
+CXX = wsl g++
 CFLAGS = -std=c11 -Wall -Wextra -Wpedantic -O2 -Wno-unused-parameter
 CXXFLAGS = -std=c++17 -Wall -Wextra -Wpedantic -O2
 LDFLAGS = -lm
