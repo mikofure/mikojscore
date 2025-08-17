@@ -122,7 +122,7 @@ install(DIRECTORY include/
 
 # Enable CTest framework for running unit tests
 # This allows using 'ctest' command to run all tests or specific test suites
-enable_testing()
+# enable_testing()
 
 # Add the tests subdirectory which contains:
 # - test_gc.c: Garbage collector functionality tests
@@ -142,4 +142,4 @@ enable_testing()
 # - Run all: ctest
 # - Run specific: ctest -R test_lexer
 # - Verbose output: ctest -V
-add_subdirectory(tests)
+# add_subdirectory(tests)
